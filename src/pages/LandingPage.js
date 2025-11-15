@@ -7,6 +7,7 @@ export default function LandingPage() {
   const [showAdminTooltip, setShowAdminTooltip] = useState(false);
   const [showAdminButton, setShowAdminButton] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
+  const [showFadeAnimation, setShowFadeAnimation] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimeoutRef = useRef(null);
   const isMobileRef = useRef(window.innerWidth < 768);
@@ -24,8 +25,12 @@ export default function LandingPage() {
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        setAdminMode((prev) => !prev);
-        setShowAdminButton((prev) => !prev);
+        setShowFadeAnimation(true);
+        setTimeout(() => {
+          setAdminMode((prev) => !prev);
+          setShowAdminButton((prev) => !prev);
+          setShowFadeAnimation(false);
+        }, 400);
       }
     };
 
@@ -47,8 +52,12 @@ export default function LandingPage() {
     }
 
     if (tapCountRef.current === 3) {
-      setAdminMode((prev) => !prev);
-      setShowAdminButton((prev) => !prev);
+      setShowFadeAnimation(true);
+      setTimeout(() => {
+        setAdminMode((prev) => !prev);
+        setShowAdminButton((prev) => !prev);
+        setShowFadeAnimation(false);
+      }, 400);
       tapCountRef.current = 0;
     }
 
@@ -62,7 +71,7 @@ export default function LandingPage() {
       adminMode
         ? "bg-gradient-to-br from-slate-950 via-orange-950 to-slate-950"
         : "bg-gradient-to-br from-slate-950 via-cyan-950 to-slate-950"
-    }`}>
+    } ${showFadeAnimation ? 'dark-fade-transition' : ''}`}>
       {/* Floating Admin Button - Bottom Right Corner */}
       {showAdminButton && (
         <button
