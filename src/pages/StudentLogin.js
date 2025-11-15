@@ -16,6 +16,12 @@ export default function StudentLogin() {
   const [showDeviceConfirmation, setShowDeviceConfirmation] = useState(false);
   const [studentData, setStudentData] = useState(null);
 
+  // Handle roll number input - only uppercase and numbers
+  const handleRollNumberChange = (e) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    setRollNumber(value);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,8 +115,8 @@ export default function StudentLogin() {
                     id="roll_number"
                     type="text"
                     value={rollNumber}
-                    onChange={(e) => setRollNumber(e.target.value)}
-                    className="bg-slate-900/50 border-slate-700 text-white h-12"
+                    onChange={handleRollNumberChange}
+                    className="bg-slate-900/50 border-slate-700 text-white h-12 uppercase"
                     placeholder="Enter your roll number"
                     required
                   />
