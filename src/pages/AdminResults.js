@@ -13,12 +13,15 @@ export default function AdminResults() {
   const [results, setResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [filters, setFilters] = useState({
-    branch: "",
-    year: "",
-    semester: "",
+    branch: "all",
+    year: "all",
+    semester: "all",
     subject: "",
-    section: ""
+    section: "all"
   });
 
   useEffect(() => {
@@ -29,46 +32,80 @@ export default function AdminResults() {
     try {
       const response = await axios.get(`${API}/admin/results`);
       setResults(response.data);
-      setFilteredResults(response.data);
     } catch (error) {
       toast.error("Failed to fetch results");
     }
   };
 
+  const fetchAvailableSubjects = async () => {
+    if (filters.branch === "all" || filters.year === "all" || filters.semester === "all") {
+      setAvailableSubjects([]);
+      return;
+    }
+
+    setLoadingSubjects(true);
+    try {
+      const response = await axios.get(`${API}/admin/available-subjects`, {
+        params: {
+          branch: filters.branch,
+          year: filters.year,
+          semester: filters.semester
+        }
+      });
+      setAvailableSubjects(response.data.subjects || []);
+      // Clear subject filter when branch/year/semester changes
+      setFilters(prev => ({ ...prev, subject: "" }));
+    } catch (error) {
+      console.error("Failed to fetch subjects:", error);
+      setAvailableSubjects([]);
+      toast.error("Failed to fetch available subjects");
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
+
+  // Fetch subjects whenever branch, year, or semester changes
+  useEffect(() => {
+    fetchAvailableSubjects();
+  }, [filters.branch, filters.year, filters.semester]);
+
   const applyFilters = () => {
     let filtered = [...results];
 
-    if (filters.branch) {
+    if (filters.branch && filters.branch !== "all") {
       filtered = filtered.filter(r => r.branch === filters.branch);
     }
-    if (filters.year) {
+    if (filters.year && filters.year !== "all") {
       filtered = filtered.filter(r => r.year === filters.year);
     }
-    if (filters.semester) {
+    if (filters.semester && filters.semester !== "all") {
       filtered = filtered.filter(r => r.semester === filters.semester);
     }
     if (filters.subject) {
       filtered = filtered.filter(r => r.subject.toLowerCase().includes(filters.subject.toLowerCase()));
     }
-    if (filters.section) {
+    if (filters.section && filters.section !== "all") {
       filtered = filtered.filter(r => r.section === filters.section);
     }
 
     setFilteredResults(filtered);
+    setFiltersApplied(true);
     setShowFilterDialog(false);
     toast.success("Filters applied");
   };
 
   const clearFilters = () => {
     setFilters({
-      branch: "",
-      year: "",
-      semester: "",
+      branch: "all",
+      year: "all",
+      semester: "all",
       subject: "",
-      section: ""
+      section: "all"
     });
-    setFilteredResults(results);
+    setFilteredResults([]);
+    setFiltersApplied(false);
     setShowFilterDialog(false);
+    setAvailableSubjects([]);
   };
 
   return (
@@ -98,58 +135,64 @@ export default function AdminResults() {
           </Button>
         </div>
 
-        <div className="glass-effect rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-900/50">
-                <tr>
-                  <th className="text-left p-4 text-gray-300 font-medium">Roll Number</th>
-                  <th className="text-left p-4 text-gray-300 font-medium">Student Name</th>
-                  <th className="text-left p-4 text-gray-300 font-medium">Subject</th>
-                  <th className="text-left p-4 text-gray-300 font-medium">Score</th>
-                  <th className="text-left p-4 text-gray-300 font-medium">Percentage</th>
-                  <th className="text-left p-4 text-gray-300 font-medium">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredResults.map((result) => (
-                  <tr
-                    key={result.id}
-                    data-testid={`result-row-${result.id}`}
-                    className="border-t border-slate-800 hover:bg-slate-900/30 transition-colors"
-                  >
-                    <td className="p-4 text-white font-medium">{result.roll_number}</td>
-                    <td className="p-4 text-gray-300">{result.student_name}</td>
-                    <td className="p-4 text-gray-300">{result.subject}</td>
-                    <td className="p-4 text-white font-medium">{result.score}</td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          result.percentage >= 75
-                            ? "bg-green-500/20 text-green-400"
-                            : result.percentage >= 50
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
-                        {result.percentage}%
-                      </span>
-                    </td>
-                    <td className="p-4 text-gray-400 text-sm">
-                      {result.date ? new Date(result.date).toLocaleDateString() : "N/A"}
-                    </td>
+        {filtersApplied ? (
+          <div className="glass-effect rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-900/50">
+                  <tr>
+                    <th className="text-left p-4 text-gray-300 font-medium">Roll Number</th>
+                    <th className="text-left p-4 text-gray-300 font-medium">Student Name</th>
+                    <th className="text-left p-4 text-gray-300 font-medium">Subject</th>
+                    <th className="text-left p-4 text-gray-300 font-medium">Score</th>
+                    <th className="text-left p-4 text-gray-300 font-medium">Percentage</th>
+                    <th className="text-left p-4 text-gray-300 font-medium">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredResults.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-400">No results found</p>
+                </thead>
+                <tbody>
+                  {filteredResults.map((result) => (
+                    <tr
+                      key={result.id}
+                      data-testid={`result-row-${result.id}`}
+                      className="border-t border-slate-800 hover:bg-slate-900/30 transition-colors"
+                    >
+                      <td className="p-4 text-white font-medium">{result.roll_number}</td>
+                      <td className="p-4 text-gray-300">{result.student_name}</td>
+                      <td className="p-4 text-gray-300">{result.subject}</td>
+                      <td className="p-4 text-white font-medium">{result.score}</td>
+                      <td className="p-4">
+                        <span
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                            result.percentage >= 75
+                              ? "bg-green-500/20 text-green-400"
+                              : result.percentage >= 50
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-red-500/20 text-red-400"
+                          }`}
+                        >
+                          {result.percentage}%
+                        </span>
+                      </td>
+                      <td className="p-4 text-gray-400 text-sm">
+                        {result.date ? new Date(result.date).toLocaleDateString() : "N/A"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {filteredResults.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-400">No results found</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="glass-effect rounded-xl overflow-hidden text-center py-12">
+            <p className="text-gray-400">Click the "Filters" button to apply filters and view results</p>
+          </div>
+        )}
 
         {/* Filter Dialog */}
         <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
@@ -165,7 +208,7 @@ export default function AdminResults() {
                     <SelectValue placeholder="All Branches" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                    <SelectItem value=" ">All Branches</SelectItem>
+                    <SelectItem value="all">All Branches</SelectItem>
                     <SelectItem value="CSE">Computer Science</SelectItem>
                     <SelectItem value="ECE">Electronics</SelectItem>
                     <SelectItem value="MECH">Mechanical</SelectItem>
@@ -181,7 +224,7 @@ export default function AdminResults() {
                     <SelectValue placeholder="All Years" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                    <SelectItem value=" ">All Years</SelectItem>
+                    <SelectItem value="all">All Years</SelectItem>
                     <SelectItem value="1">1st Year</SelectItem>
                     <SelectItem value="2">2nd Year</SelectItem>
                     <SelectItem value="3">3rd Year</SelectItem>
@@ -197,9 +240,35 @@ export default function AdminResults() {
                     <SelectValue placeholder="All Semesters" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                    <SelectItem value=" ">All Semesters</SelectItem>
+                    <SelectItem value="all">All Semesters</SelectItem>
                     <SelectItem value="1">Semester 1</SelectItem>
                     <SelectItem value="2">Semester 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-gray-300 text-sm mb-2 block">Subject</label>
+                <Select 
+                  value={filters.subject} 
+                  onValueChange={(value) => setFilters({...filters, subject: value})}
+                  disabled={filters.branch === "all" || filters.year === "all" || filters.semester === "all"}
+                >
+                  <SelectTrigger data-testid="filter-subject-select" className="bg-slate-800 border-slate-700 text-white disabled:opacity-50">
+                    <SelectValue placeholder={loadingSubjects ? "Loading..." : "Select Subject"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                    {availableSubjects.length > 0 ? (
+                      availableSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-subjects" disabled>
+                        No subjects available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

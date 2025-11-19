@@ -73,11 +73,17 @@ export default function ExamInterface() {
     
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
-        if (prev <= 1) {
+        const newTime = prev - 1;
+        
+        // Auto-submit when time reaches 0
+        if (newTime <= 0) {
+          clearInterval(timer);
+          console.log("⏱ TIME'S UP! Auto-submitting exam...");
           handleAutoSubmit();
           return 0;
         }
-        return prev - 1;
+        
+        return newTime;
       });
     }, 1000);
     
@@ -237,23 +243,48 @@ export default function ExamInterface() {
   };
 
   const handleAutoSubmit = async () => {
-    toast.warning("Time's up! Auto-submitting exam...");
-    await handleSubmit();
+    console.log("🚀 Auto-submit initiated");
+    toast.warning("Time's up! Auto-submitting exam...", {
+      duration: 2000,
+      icon: "⏱"
+    });
+    
+    // Small delay to ensure UI updates
+    setTimeout(() => {
+      handleSubmit();
+    }, 500);
   };
 
   const handleSubmit = async () => {
+    // Prevent duplicate submissions
+    if (submitting) {
+      console.warn("⚠️ Submission already in progress");
+      return;
+    }
+    
     setSubmitting(true);
     
     try {
-      await axios.post(`${API}/student/submit-exam/${attemptId}`);
+      console.log("📤 Submitting exam...");
+      const response = await axios.post(`${API}/student/submit-exam/${attemptId}`);
+      
+      console.log("✅ Exam submitted successfully:", response.data);
       setShowSubmitDialog(false);
       setShowThankYou(true);
       
+      // Clear session storage
+      const sessionKey = `exam_session_${attemptId}`;
+      sessionStorage.removeItem(sessionKey);
+      
+      // Redirect after showing thank you message
       setTimeout(() => {
         navigate("/student/dashboard");
       }, 3000);
     } catch (error) {
-      toast.error("Failed to submit exam");
+      console.error("❌ Failed to submit exam:", error);
+      toast.error(
+        error.response?.data?.detail || "Failed to submit exam. Please try again."
+      );
       setSubmitting(false);
     }
   };
@@ -394,22 +425,24 @@ export default function ExamInterface() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-1">
-            {/* Submit Button - Always visible */}
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            {/* Submit Button - Icon only on mobile */}
             <button
               onClick={() => setShowSubmitDialog(true)}
-              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold transition-all text-xs sm:text-sm shadow-lg hover:shadow-green-500/25"
+              title="Submit Exam"
+              className="flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold transition-all text-xs sm:text-sm shadow-lg hover:shadow-green-500/25"
             >
-              <Send className="w-3 h-3" />
+              <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span className="hidden sm:inline">Submit</span>
             </button>
 
-            {/* Hamburger Menu */}
+            {/* Hamburger Menu - ONLY on mobile (hidden sm:block) */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
-              className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-gray-300"
+              title={showSidebar ? "Close Menu" : "Open Menu"}
+              className="sm:hidden p-1 hover:bg-slate-800 rounded-lg transition-colors text-gray-300"
             >
-              {showSidebar ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {showSidebar ? <X className="w-3.5 h-3.5" /> : <Menu className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
@@ -539,8 +572,8 @@ export default function ExamInterface() {
           </div>
         </div>
 
-        {/* Mobile Navigation - Visible only on mobile, hidden on sm and above */}
-        <div className="sm:hidden flex gap-2 p-3 border-t border-slate-700 bg-slate-900/40">
+        {/* Mobile Navigation - Visible ONLY on mobile */}
+        <div className="sm:hidden flex gap-2 p-2 border-t border-slate-700 bg-slate-900/40 order-2">
           <button
             data-testid="mobile-prev-btn"
             onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
@@ -571,10 +604,8 @@ export default function ExamInterface() {
           </button>
         </div>
 
-
-
-        {/* Right: Options Area */}
-        <div className="hidden sm:flex w-full sm:w-96 lg:w-[420px] bg-slate-800/20 border-r border-slate-700 flex-col overflow-hidden">
+        {/* Right: Options Area - hidden sm:flex */}
+        <div className="hidden sm:flex w-full sm:w-96 lg:w-[420px] bg-slate-800/20 border-r border-slate-700 flex-col overflow-hidden order-3 sm:order-none">
           {/* Options Header */}
           <div className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-700 bg-slate-900/40">
             <div className="flex items-center justify-between">
@@ -674,11 +705,11 @@ export default function ExamInterface() {
           </div>
         </div>
 
-        {/* Sidebar - Question Navigator */}
+        {/* Sidebar - Proper toggle on mobile */}
         <div
-          className={`fixed inset-y-0 right-0 w-64 sm:w-72 bg-slate-900 border-l border-slate-700 shadow-2xl transform transition-all duration-300 ease-in-out z-30 overflow-hidden flex flex-col ${
-            showSidebar ? "translate-x-0" : "translate-x-full"
-          } lg:static lg:translate-x-0 lg:w-80`}
+          className={`fixed inset-y-0 right-0 w-64 sm:w-72 bg-slate-900 border-l border-slate-700 shadow-2xl transform transition-all duration-300 ease-in-out z-30 overflow-hidden flex flex-col sm:static sm:translate-x-0 order-4 sm:order-none lg:w-80 ${
+            showSidebar ? "translate-x-0" : "translate-x-full sm:translate-x-0"
+          }`}
         >
           <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-700/50">
             <div className="p-3 sm:p-4 space-y-4 sm:space-y-5">
