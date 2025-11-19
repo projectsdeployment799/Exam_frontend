@@ -388,16 +388,16 @@ export default function ExamInterface() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1">
-            {/* Submit Button - Hidden on mobile */}
+            {/* Submit Button - Always visible */}
             <button
               onClick={() => setShowSubmitDialog(true)}
-              className="hidden sm:flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold transition-all text-xs shadow-lg hover:shadow-green-500/25"
+              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold transition-all text-xs sm:text-sm shadow-lg hover:shadow-green-500/25"
             >
               <Send className="w-3 h-3" />
-              <span className="hidden md:inline">Submit</span>
+              <span className="hidden sm:inline">Submit</span>
             </button>
 
-            {/* Hamburger Menu - Shows sidebar with stats and questions */}
+            {/* Hamburger Menu */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
               className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-gray-300"
@@ -664,16 +664,6 @@ export default function ExamInterface() {
                 <ChevronRight className="w-3 h-3" />
               </button>
             </div>
-
-            {/* Desktop Submit */}
-            <button
-              data-testid="submit-exam-btn-desktop"
-              onClick={() => setShowSubmitDialog(true)}
-              className="w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-green-500/25 text-xs"
-            >
-              <Send className="w-3 h-3" />
-              Submit
-            </button>
           </div>
         </div>
 
@@ -801,17 +791,7 @@ export default function ExamInterface() {
               </div>
             </div>
 
-            {/* Desktop Submit Button */}
-            <div className="sm:block px-3 sm:px-4 py-3 border-t border-slate-700 mt-auto flex-shrink-0">
-              <button
-                data-testid="submit-exam-btn-desktop"
-                onClick={() => setShowSubmitDialog(true)}
-                className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2 rounded-lg transition-all shadow-lg hover:shadow-green-500/25 text-xs sm:text-sm flex items-center justify-center gap-1.5"
-              >
-                <Send className="w-3 h-3" />
-                Submit
-              </button>
-            </div>
+            {/* Desktop Submit Button - Removed as per instructions */}
           </div>
         </div>
 
