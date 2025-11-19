@@ -104,12 +104,15 @@ export default function ExamInterface() {
       setExam(exam);
       setQuestions(questions || []);
       
-      // IMPORTANT: Ensure sections are set
-      if (sections && Array.isArray(sections) && sections.length > 0) {
-        console.log("✓ Setting sections:", sections);
-        setSections(sections);
+      // IMPORTANT: Ensure sections are set properly
+      const receivedSections = sections && Array.isArray(sections) ? sections : [];
+      
+      if (receivedSections.length > 0) {
+        console.log("✓ Setting sections:", receivedSections);
+        setSections(receivedSections);
       } else {
-        console.warn("⚠ No sections received or invalid format");
+        console.warn("⚠ No sections received - exam has no sections configured");
+        // Even with no sections, still show questions
         setSections([]);
       }
       
@@ -256,19 +259,23 @@ export default function ExamInterface() {
   };
 
   const getCurrentSectionQuestions = () => {
+    // If no sections exist, return all questions
     if (!sections || sections.length === 0) {
-      // No sections - return all questions
+      console.log("📋 No sections - returning all questions:", questions.length);
       return questions;
     }
     
     // Get questions for current section
     const currentSectionData = sections[currentSection];
-    if (!currentSectionData) {
+    if (!currentSectionData || !currentSectionData.question_ids) {
+      console.warn("⚠ Current section data missing or invalid");
       return [];
     }
     
     const questionIds = currentSectionData.question_ids || [];
-    return questions.filter(q => questionIds.includes(q.id));
+    const filtered = questions.filter(q => questionIds.includes(q.id));
+    console.log(`📍 Section ${currentSection}: ${filtered.length} questions`);
+    return filtered;
   };
 
   const formatTime = (seconds) => {
